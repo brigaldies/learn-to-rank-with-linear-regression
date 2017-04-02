@@ -1,5 +1,5 @@
 ---
-title: "Learn to Rank with Linear Regression"
+title: "Learn to Rank with Linear Regression Model in R"
 author: "Bertrand Rigaldies"
 date: "April 2, 2017"
 output: html_document
@@ -9,10 +9,22 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r analysis}
-# Required libraries
-library(dplyr)
+### Introduction
 
+In [OpenSourceConnections](www.opensourceconnections.com) blog [Learning to Rank 101 -- Linear Models](http://opensourceconnections.com/blog/2017/04/01/learning-to-rank-linear-models/), Search Relevancy expert [Doug Turnbull](http://opensourceconnections.com/about-us/doug-turnbull/) asks the following question in his closing remarks:
+
+*What measures can we use to evaluate how good the model is?*
+
+As possible "measures" of a good fit, we suggest below in R to inspect the following linear regression model's properties:
+
+* The P-value for each *predictor*, and reject or accept the hypothesis $H_{0}$ that a given predictor is statistically relevant in predicting a search's grade.
+* The "diagnostic residuals plots" as quick visual assessment of the model's fitness.
+
+### Training data
+
+The following very limited training data was extracted from Doug's blog:
+
+```{r data-extract}
 # Load training data set
 trainingDat <- read.csv(file = 'rocky.csv', header = TRUE)
 
@@ -22,21 +34,50 @@ trainingDat <- trainingDat[,1:(colCount-1)]
 
 # Show data
 trainingDat
+```
 
+### Linear Regression Model and Prediction
+
+A linear regression model `grade ~ .` (All other variables) is built below, and a couple of predictions are made.
+
+```{r build-model}
 # Build regression model
 lm1 <- lm(grade ~ ., data = trainingDat)
 
-summary(lm1)
-
-# Plot the "diagnostic residuals plots":
-par(mfrow = c(1, 2))
-#plot(lm1, which = 1)
-plot(lm1, which = 2)
-plot(lm1, which = 3)
-#plot(lm1, which = 4)
-
-# Predict!
+# Predict the two samples used in Doug's plot
+# titleScore,overviewScore,movieRating,comment
+# 12.28,9.82,6.40,# 7555	rambo@Rambo
+# 0.00,10.76,7.10,# 1368	rambo@First Blood
 predict(lm1, data.frame(titleScore=12.28, overviewScore=9.82, ratingScore=6.40))
 predict(lm1, data.frame(titleScore=0, overviewScore=10.76, ratingScore=7.10))
-
 ```
+
+Let's note first that our model's predictions differ from Doug's since our training data is only a small excerpt from Doug's. More interestingly, as a suggested methodology, we suggest to examine the predictors' P-values as shown in the next section.
+
+### Linear Model's P-Values
+
+```{r model-summary}
+summary(lm1)
+```
+
+The above P-values are above 0.05, which rejects $H_{0}$ using a 95% confidence interval, and treats all three predictors as *not* statistically signicant. Of course, the training dataset is too small to jump to any conclusion, and we are simply illustrating the P-value examination step as a way to assess the statistical significance of each predictor.
+
+# Linear Model's Diagnostic Residuals Plots
+
+Finally in this short essay, another technique to assess a linear model is to visualize the model's "diagnostic residuals plots" (Residual = Observed value - Predicted value). We show two plots:
+
+* "Normal Q-A"
+* "State-Location"
+
+```{r residuals-plots}
+# Plot the "diagnostic residuals plots":
+par(mfrow = c(1, 2))
+plot(lm1, which = 2)
+plot(lm1, which = 3)
+```
+
+A model's residuals plots show how poorly a model represents data.
+
+The "Normal Q-Q" plot shows the model's "iid (Independent and Identically Distributed random variables) normality". A so-called "thick crayon line" test shows that most values are aligned, with the exception of 3 outliers. In this contrived exercise, the Normal Q-Q plot looks pretty good.
+
+The Scale-Location plot shows how the residuals spread along the range of predictors. The rule of thumb is that it is good to see a horizontal line with equally (randomly) spread points above and below the line. As can be seen in the State-Location plot above, we are not seeing a good spread, hence pointing to problems in the model. Again, the dataset is too small in this exercise to expect good residuals plots, and we are simply illustrating the step of examining the residuals plots as part of assessing a linear regression model.
